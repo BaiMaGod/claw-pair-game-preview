@@ -1,0 +1,33 @@
+:root {
+  color-scheme: light;
+  font-family: ui-rounded, "SF Pro Rounded", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  background: #ffe8ef;
+}
+* { box-sizing: border-box; }
+html, body, #app { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+body { background: radial-gradient(circle at 50% 10%, #fff9ec 0%, #ffe2ec 55%, #ffd5e4 100%); }
+#app { position: relative; touch-action: none; user-select: none; }
+#game { display: block; width: 100%; height: 100%; }
+.hud { position: absolute; left: 0; right: 0; pointer-events: none; z-index: 10; }
+.top { top: max(10px, env(safe-area-inset-top)); display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 0 14px; }
+.pill, .round { box-shadow: 0 5px 14px rgba(130, 72, 90, .18); border: 2px solid rgba(255,255,255,.8); }
+.pill { background: rgba(255,255,255,.86); color: #bd5573; padding: 7px 12px; border-radius: 18px; font-size: 13px; font-weight: 800; }
+.title { text-align: center; color: #9e4968; text-shadow: 0 2px 0 #fff; font-weight: 900; font-size: clamp(15px, 4vw, 21px); }
+.round { pointer-events: auto; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,.92); color: #b44e70; font-weight: 900; font-size: 20px; cursor: pointer; }
+.progress-wrap { top: calc(max(10px, env(safe-area-inset-top)) + 52px); padding: 0 22%; }
+.progress-label { text-align: center; color: #a75570; font-size: 11px; font-weight: 800; margin-bottom: 4px; }
+.progress { height: 8px; border-radius: 99px; padding: 2px; background: rgba(255,255,255,.7); box-shadow: inset 0 1px 4px rgba(143,81,103,.15); }
+#progressFill { height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg,#ffbf67,#ff7aa0); transition: width .25s ease; }
+.hint { position: absolute; left: 50%; bottom: 19%; transform: translate(-50%, 10px); opacity: 0; transition: .18s ease; z-index: 12; background: rgba(83,43,55,.78); color: #fff; font-weight: 800; font-size: 13px; padding: 8px 12px; border-radius: 99px; white-space: nowrap; pointer-events: none; }
+.hint.show { opacity: 1; transform: translate(-50%, 0); }
+.overlay { position: absolute; inset: 0; z-index: 30; display: grid; place-items: center; background: rgba(102,50,75,.20); backdrop-filter: blur(4px); }
+.hidden { display: none !important; }
+.panel { width: min(82vw, 360px); border-radius: 28px; padding: 26px 22px 22px; text-align: center; background: linear-gradient(180deg,#fffdfa,#fff0f5); border: 3px solid rgba(255,255,255,.9); box-shadow: 0 22px 70px rgba(109,51,76,.28); }
+.result-emoji { font-size: 50px; }
+.panel h2 { margin: 6px 0 8px; color: #aa4b6a; font-size: 22px; }
+.panel p { margin: 0 0 18px; color: #86596b; font-size: 14px; }
+.panel button { border: none; border-radius: 99px; padding: 12px 28px; background: linear-gradient(180deg,#ff9ab3,#ef678d); color: #fff; font-weight: 900; font-size: 16px; box-shadow: 0 7px 0 #cf4f73, 0 12px 24px rgba(207,79,115,.25); cursor: pointer; }
+.debug { position: absolute; z-index: 40; left: 8px; bottom: 8px; max-width: 260px; white-space: pre; padding: 8px; font: 11px/1.35 ui-monospace, monospace; background: rgba(20,20,30,.75); color: #e9f5ff; border-radius: 8px; pointer-events: none; }
+@media (min-aspect-ratio: 4/5) {
+  #app { max-width: 620px; margin: 0 auto; box-shadow: 0 0 80px rgba(154,88,112,.18); }
+}
