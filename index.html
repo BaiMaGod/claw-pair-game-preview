@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>抓娃娃找朋友 — MVP V0.1</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <canvas id="game"></canvas>
+    <div class="hud top">
+      <div class="pill level">关卡 1-1</div>
+      <div class="title">寻找玩具伙伴</div>
+      <button id="restartSmall" class="round" aria-label="重新开始">↻</button>
+    </div>
+    <div class="hud progress-wrap">
+      <div class="progress-label"><span id="rescued">0</span>/<span id="pairTotal">10</span> 对朋友</div>
+      <div class="progress"><div id="progressFill"></div></div>
+    </div>
+    <div id="hint" class="hint"></div>
+    <div id="debug" class="debug hidden"></div>
+    <div id="overlay" class="overlay hidden">
+      <div class="panel">
+        <div id="resultEmoji" class="result-emoji">✨</div>
+        <h2 id="resultTitle">大家都找到朋友啦！</h2>
+        <p id="resultText">娃娃机已经清空。</p>
+        <button id="restart">再玩一次</button>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="./dist/main.js"></script>
+</body>
+</html>
