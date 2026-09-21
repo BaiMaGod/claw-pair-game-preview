@@ -63,7 +63,7 @@ const TOY_ASSET_PATHS = {
   car: './assets/toys/car.webp'
 };
 
-const MACHINE_SHELL_PATH = './assets/machine/machine-shell-v05.webp';
+const MACHINE_SHELL_PATH = './assets/machine/machine-shell-v06.webp';
 let machineShellTexture = null;
 function getMachineShellTexture(){
   if(machineShellTexture) return machineShellTexture;
@@ -115,13 +115,13 @@ let hintTimer = 0;
 pairTotalEl.textContent = String(totalPairs);
 
 const slotPositions = [
-  new THREE.Vector3(-3.34, -3.98, 6.68),
-  new THREE.Vector3(-1.83, -3.82, 6.68),
-  new THREE.Vector3(-0.27, -3.63, 6.68),
-  new THREE.Vector3( 1.35, -3.46, 6.68)
+  new THREE.Vector3(-3.18, -4.18, 6.70),
+  new THREE.Vector3(-1.68, -4.02, 6.70),
+  new THREE.Vector3(-0.16, -3.86, 6.70),
+  new THREE.Vector3( 1.38, -3.69, 6.70)
 ];
-const chuteEntry = new THREE.Vector3(3.53, -2.71, 6.45);
-const exitPoint = new THREE.Vector3(3.72, -1.62, 5.38);
+const chuteEntry = new THREE.Vector3(3.46, -2.91, 6.58);
+const exitPoint = new THREE.Vector3(3.60, -1.82, 6.40);
 
 function lerp(a,b,t){ return a+(b-a)*t; }
 function roundedRectPath(ctx,x,y,w,h,r){
@@ -281,55 +281,56 @@ function box(w,h,d,color,z=0,roughness=.32,metalness=.08){const m=new THREE.Mesh
 function sphere(r,color){return new THREE.Mesh(new THREE.SphereGeometry(r,28,18),new THREE.MeshStandardMaterial({color,roughness:.25,metalness:.08}));}
 
 function buildMachine(){
-  // Interior stays live/interactive; the polished effect-image shell sits in front
-  // with a transparent glass opening and an integrated right-to-left queue track.
+  // V0.6: effect-image shell + live toy chamber.
+  // The verified shell contains the glossy cabinet, right-side exit,
+  // continuous left-descending tray, four glowing queue markers and base panel.
   const back=plane(
-    8.46,
-    8.15,
+    8.72,
+    7.75,
     new THREE.MeshBasicMaterial({map:createBackdropTexture(),toneMapped:false}),
-    -.72
+    -.76
   );
-  back.position.y=2.23;
+  back.position.y=2.05;
   machineBack.add(back);
 
-  const floor=plane(8.48,1.10,basicMaterial(0xf2bfd0),-.64);
-  floor.position.y=-1.43;
+  // Soft inner floor only; the finished lower cabinet comes from the shell asset.
+  const floor=plane(8.65,.72,basicMaterial(0xf2bfd0),-.70);
+  floor.position.y=-1.50;
   machineBack.add(floor);
 
   const shellTexture=getMachineShellTexture();
   const shell=plane(
-    10.35,
-    14.10,
+    11.00,
+    15.00,
     new THREE.MeshBasicMaterial({
       map:shellTexture,
       transparent:true,
-      alphaTest:.025,
+      alphaTest:.012,
       depthWrite:false,
+      depthTest:true,
       toneMapped:false,
       side:THREE.DoubleSide
     }),
-    5.55
+    5.72
   );
-  shell.position.y=-.25;
-  shell.renderOrder=8;
+  shell.position.y=-.88;
+  shell.renderOrder=20;
   machineFront.add(shell);
 
-  // The shell already contains the finished chute, four glowing wait markers,
-  // machine base, screws, highlights, and TOY FRIENDS panel.
-  // Only a very light live glass sheen remains procedural.
-  const glass=plane(8.45,8.00,basicMaterial(0xecfaff,.045),6.02);
-  glass.position.y=2.20;
-  glass.renderOrder=9;
+  // Live glass highlights are deliberately subtle so they do not wash out the toys.
+  const glass=plane(8.62,7.72,basicMaterial(0xf2fbff,.035),6.05);
+  glass.position.y=2.02;
+  glass.renderOrder=21;
   machineFront.add(glass);
 
   for(const [x,y,w,h,r,a] of [
-    [-3.00,2.65,.19,6.10,-.11,.10],
-    [ 3.08,3.05,.11,3.50,-.11,.07]
+    [-3.36,2.20,.14,5.65,-.09,.075],
+    [ 3.34,2.52,.09,3.10,-.09,.055]
   ]){
-    const hi=plane(w,h,basicMaterial(0xffffff,a),6.08);
+    const hi=plane(w,h,basicMaterial(0xffffff,a),6.10);
     hi.position.set(x,y,0);
     hi.rotation.z=r;
-    hi.renderOrder=10;
+    hi.renderOrder=22;
     machineFront.add(hi);
   }
 }
@@ -393,9 +394,9 @@ function createToy(data){
 }
 
 function createClaw(){
-  const g=new THREE.Group();g.position.set(0,5.38,7.35);
+  const g=new THREE.Group();g.position.set(0,5.18,7.35);
   const chrome=new THREE.MeshStandardMaterial({color:0xf4f8fa,roughness:.12,metalness:.86}),pink=new THREE.MeshStandardMaterial({color:0xe96290,roughness:.22,metalness:.28});
-  const rail=box(8.1,.12,.13,0xd85f89,7.0,.22,.22);rail.position.set(0,6.00,0);machineFront.add(rail);
+  const rail=box(7.45,.08,.10,0xf2a4bd,6.12,.28,.08);rail.position.set(0,5.68,0);machineFront.add(rail);
   const slider=box(.62,.24,.20,0xf07ea0,7.05,.18,.18);slider.position.y=.98;
   const rod=new THREE.Mesh(new THREE.CylinderGeometry(.10,.10,1.10,24),chrome);rod.position.y=.52;
   const hub=sphere(.31,0xe96c96);hub.material=pink;hub.position.y=-.04;
@@ -413,11 +414,11 @@ function resetGame(){
   toyMap.clear();meshToToy.clear();clickableRoots.length=0;
   blockGraph=new BlockGraph(TEST_LEVEL.toys.map(t=>t.id),TEST_LEVEL.blocks);slotQueue=new SlotQueue(TEST_LEVEL.slotCapacity);
   clawBusy=false;gameEnded=false;activePairAnimations=0;rescuedPairs=0;overlay.classList.add('hidden');rescuedEl.textContent='0';progressFill.style.width='0%';
-  for(const data of TEST_LEVEL.toys)createToy(data);if(!claw)claw=createClaw();claw.position.set(0,5.38,7.35);updateDebug();
+  for(const data of TEST_LEVEL.toys)createToy(data);if(!claw)claw=createClaw();claw.position.set(0,5.18,7.35);updateDebug();
 }
 function resize(){
   const w=canvas.clientWidth||innerWidth,h=canvas.clientHeight||innerHeight;renderer.setSize(w,h,false);
-  const aspect=w/h,worldH=18.4,worldW=worldH*aspect;camera.left=-worldW/2;camera.right=worldW/2;camera.top=worldH/2;camera.bottom=-worldH/2;camera.updateProjectionMatrix();
+  const aspect=w/h,worldH=17.8,worldW=worldH*aspect;camera.left=-worldW/2;camera.right=worldW/2;camera.top=worldH/2;camera.bottom=-worldH/2;camera.updateProjectionMatrix();
 }
 
 const now=()=>performance.now(),easeOutCubic=t=>1-Math.pow(1-t,3),easeInOutCubic=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,easeOutBack=t=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2);};
@@ -446,14 +447,14 @@ async function clawPick(toy){
   const targetY=toy.position.y+1.02,downStart=claw.position.y;await tween(155,t=>claw.position.y=lerp(downStart,targetY,t));
   toy.userData.status='grabbing';const left=claw.userData.left,right=claw.userData.right,l0=left.rotation.z,r0=right.rotation.z;
   await tween(95,t=>{left.rotation.z=lerp(l0,-.13,t);right.rotation.z=lerp(r0,.13,t);});
-  const toyStart=toy.position.clone(),clawY=claw.position.y;await tween(170,(e,raw)=>{claw.position.y=lerp(clawY,5.38,e);toy.position.y=lerp(toyStart.y,4.33,e);toy.position.x=claw.position.x;toy.position.z=6.72;toy.rotation.z=toyStart.z+Math.sin(raw*Math.PI)*.045;},easeOutCubic);
-  const cx=claw.position.x,tx=toy.position.x;await tween(205,t=>{claw.position.x=lerp(cx,4.03,t);toy.position.x=lerp(tx,4.03,t);},easeInOutCubic);
+  const toyStart=toy.position.clone(),clawY=claw.position.y;await tween(170,(e,raw)=>{claw.position.y=lerp(clawY,5.18,e);toy.position.y=lerp(toyStart.y,4.18,e);toy.position.x=claw.position.x;toy.position.z=6.72;toy.rotation.z=toyStart.z+Math.sin(raw*Math.PI)*.045;},easeOutCubic);
+  const cx=claw.position.x,tx=toy.position.x;await tween(205,t=>{claw.position.x=lerp(cx,3.60,t);toy.position.x=lerp(tx,3.60,t);},easeInOutCubic);
   left.rotation.z=l0;right.rotation.z=r0;toy.userData.status='chute';const unlocked=blockGraph.removeToy(id);unlocked.forEach(animateUnlock);
   const dropStart=toy.position.clone();await tween(150,(e,raw)=>{toy.position.lerpVectors(dropStart,exitPoint,e);toy.rotation.z+=.012*(1-raw);},t=>t*t);
   await acceptFromChute(toy);clawBusy=false;updateDebug();
 }
 function curvePointForSlot(index,t){
-  const target=slotPositions[index],p0=chuteEntry,p1=new THREE.Vector3(3.20,-2.82,6.60),p2=new THREE.Vector3(target.x+.74,target.y+.22,6.64);
+  const target=slotPositions[index],p0=chuteEntry,p1=new THREE.Vector3(2.90,-3.12,6.64),p2=new THREE.Vector3(target.x+.70,target.y+.18,6.68);
   return new THREE.CubicBezierCurve3(p0,p1,p2,target).getPoint(t);
 }
 async function acceptFromChute(toy){
