@@ -281,9 +281,9 @@ function box(w,h,d,color,z=0,roughness=.32,metalness=.08){const m=new THREE.Mesh
 function sphere(r,color){return new THREE.Mesh(new THREE.SphereGeometry(r,28,18),new THREE.MeshStandardMaterial({color,roughness:.25,metalness:.08}));}
 
 function buildMachine(){
-  // V0.6: effect-image shell + live toy chamber.
-  // The verified shell contains the glossy cabinet, right-side exit,
-  // continuous left-descending tray, four glowing queue markers and base panel.
+  // V0.7: cabinet frame is rendered as a DOM foreground image.
+  // Three.js owns only the live interior so the shell cannot disappear because
+  // of transparent-material sorting or WebGL texture issues.
   const back=plane(
     8.72,
     7.75,
@@ -293,39 +293,18 @@ function buildMachine(){
   back.position.y=2.05;
   machineBack.add(back);
 
-  // Soft inner floor only; the finished lower cabinet comes from the shell asset.
   const floor=plane(8.65,.72,basicMaterial(0xf2bfd0),-.70);
   floor.position.y=-1.50;
   machineBack.add(floor);
 
-  const shellTexture=getMachineShellTexture();
-  const shell=plane(
-    11.00,
-    15.00,
-    new THREE.MeshBasicMaterial({
-      map:shellTexture,
-      transparent:true,
-      alphaTest:.012,
-      depthWrite:false,
-      depthTest:true,
-      toneMapped:false,
-      side:THREE.DoubleSide
-    }),
-    5.72
-  );
-  shell.position.y=-.88;
-  shell.renderOrder=20;
-  machineFront.add(shell);
-
-  // Live glass highlights are deliberately subtle so they do not wash out the toys.
-  const glass=plane(8.62,7.72,basicMaterial(0xf2fbff,.035),6.05);
+  const glass=plane(8.62,7.72,basicMaterial(0xf2fbff,.028),6.05);
   glass.position.y=2.02;
   glass.renderOrder=21;
   machineFront.add(glass);
 
   for(const [x,y,w,h,r,a] of [
-    [-3.36,2.20,.14,5.65,-.09,.075],
-    [ 3.34,2.52,.09,3.10,-.09,.055]
+    [-3.36,2.20,.12,5.55,-.09,.060],
+    [ 3.34,2.52,.08,3.00,-.09,.045]
   ]){
     const hi=plane(w,h,basicMaterial(0xffffff,a),6.10);
     hi.position.set(x,y,0);
