@@ -16,11 +16,11 @@ const hintEl = document.querySelector('#hint');
 const debugEl = document.querySelector('#debug');
 
 const TYPE_META = {
-  bear:     { label: '小熊', size: [1.78, 2.10] },
-  duck:     { label: '小鸭', size: [1.72, 1.94] },
-  car:      { label: '汽车', size: [1.90, 1.54] },
-  rabbit:   { label: '兔子', size: [1.72, 2.20] },
-  dinosaur: { label: '恐龙', size: [1.88, 2.04] }
+  bear:     { label: '小熊', size: [1.84, 2.08] },
+  duck:     { label: '小鸭', size: [1.78, 1.72] },
+  car:      { label: '汽车', size: [2.08, 1.42] },
+  rabbit:   { label: '兔子', size: [1.76, 2.22] },
+  dinosaur: { label: '恐龙', size: [1.92, 2.00] }
 };
 
 const scene = new THREE.Scene();
@@ -54,6 +54,33 @@ const clickableRoots = [];
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 const toyTextureCache = new Map();
+const toyAssetLoader = new THREE.TextureLoader();
+const TOY_ASSET_PATHS = {
+  bear: './assets/toys/bear.webp',
+  rabbit: './assets/toys/rabbit.webp',
+  duck: './assets/toys/duck.webp',
+  dinosaur: './assets/toys/dino.webp',
+  car: './assets/toys/car.webp'
+};
+
+function getToyAssetTexture(type){
+  const key = `asset:${type}`;
+  if (toyTextureCache.has(key)) return toyTextureCache.get(key);
+  const texture = toyAssetLoader.load(
+    TOY_ASSET_PATHS[type],
+    loaded => {
+      loaded.colorSpace = THREE.SRGBColorSpace;
+      loaded.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+      loaded.needsUpdate = true;
+    },
+    undefined,
+    () => console.warn(`Toy asset failed to load: ${TOY_ASSET_PATHS[type]}`)
+  );
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  toyTextureCache.set(key, texture);
+  return texture;
+}
 
 let blockGraph;
 let slotQueue;
@@ -269,11 +296,55 @@ function buildMachine(){
 
 function createToyVisual(type){
   const g=new THREE.Group(),meta=TYPE_META[type];
-  const shadow=plane(meta.size[0]*1.08,.62,new THREE.MeshBasicMaterial({map:shadowTexture,transparent:true,opacity:.48,depthWrite:false,toneMapped:false}),-.08);
-  shadow.position.y=-meta.size[1]*.39;
-  const normal=createToyTexture(type,false),awake=createToyTexture(type,true);
-  const sprite=plane(meta.size[0],meta.size[1],new THREE.MeshBasicMaterial({map:normal,transparent:true,alphaTest:.02,depthWrite:false,toneMapped:false,side:THREE.DoubleSide}),.03);
-  g.add(shadow,sprite);g.userData.sprite=sprite;g.userData.shadow=shadow;g.userData.normalTexture=normal;g.userData.awakeTexture=awake;sprite.userData.toyRoot=g;return g;
+
+  const shadow=plane(
+    meta.size[0]*1.10,
+    .58,
+    new THREE.MeshBasicMaterial({
+      map:shadowTexture,
+      transparent:true,
+      opacity:.38,
+      depthWrite:false,
+      toneMapped:false
+    }),
+    -.09
+  );
+  shadow.position.y=-meta.size[1]*.40;
+
+  const glow=new THREE.Mesh(
+    new THREE.CircleGeometry(meta.size[0]*.58,40),
+    new THREE.MeshBasicMaterial({
+      color:0xffefad,
+      transparent:true,
+      opacity:.18,
+      depthWrite:false,
+      toneMapped:false,
+      blending:THREE.AdditiveBlending
+    })
+  );
+  glow.position.set(0,.02,-.01);
+  glow.scale.set(1,1.18,1);
+  glow.visible=false;
+
+  const normal=getToyAssetTexture(type);
+  const material=new THREE.MeshBasicMaterial({
+    map:normal,
+    transparent:true,
+    alphaTest:.035,
+    depthWrite:true,
+    depthTest:true,
+    toneMapped:false,
+    side:THREE.DoubleSide
+  });
+  const sprite=plane(meta.size[0],meta.size[1],material,.03);
+
+  g.add(shadow,glow,sprite);
+  g.userData.sprite=sprite;
+  g.userData.shadow=shadow;
+  g.userData.awakeGlow=glow;
+  g.userData.normalTexture=normal;
+  sprite.userData.toyRoot=g;
+  return g;
 }
 function createToy(data){
   const group=createToyVisual(data.type);group.position.set(...data.position);group.rotation.set(...data.rotation);group.scale.setScalar(data.scale??1);
@@ -315,7 +386,14 @@ async function tweenPos(obj,target,ms,easing=easeInOutCubic){const start=obj.pos
 function showHint(text,ms=950){hintEl.textContent=text;hintEl.classList.add('show');clearTimeout(hintTimer);hintTimer=setTimeout(()=>hintEl.classList.remove('show'),ms);}
 async function pulse(toy){if(!toy)return;const base=toy.scale.x;await tween(300,(e,raw)=>{const s=base*(1+.11*Math.sin(raw*Math.PI));toy.scale.setScalar(s);});toy.scale.setScalar(base);}
 async function shakeToy(toy){const base=toy.rotation.z,blockers=blockGraph.getBlockers(toy.userData.toyId);showHint('它被压住啦！先抓上面的玩具');for(const id of blockers)pulse(toyMap.get(id));await tween(300,(e,raw)=>{toy.rotation.z=base+Math.sin(raw*Math.PI*7)*.052*(1-raw);});toy.rotation.z=base;}
-function setAwake(toy,awake){const sprite=toy?.userData?.sprite;if(!sprite)return;sprite.material.map=awake?toy.userData.awakeTexture:toy.userData.normalTexture;sprite.material.needsUpdate=true;}
+function setAwake(toy,awake){
+  const sprite=toy?.userData?.sprite;
+  if(!sprite)return;
+  toy.userData.awake=awake;
+  if(toy.userData.awakeGlow) toy.userData.awakeGlow.visible=awake;
+  sprite.material.opacity=awake?1:.985;
+  sprite.material.needsUpdate=true;
+}
 async function animateUnlock(id){
   const toy=toyMap.get(id);if(!toy||toy.userData.status!=='pile')return;
   const sy=toy.position.y,sx=toy.position.x,sr=toy.rotation.z,drift=(sx>=0?1:-1)*.06;
