@@ -63,6 +63,25 @@ const TOY_ASSET_PATHS = {
   car: './assets/toys/car.webp'
 };
 
+const MACHINE_SHELL_PATH = './assets/machine/machine-shell-v05.webp';
+let machineShellTexture = null;
+function getMachineShellTexture(){
+  if(machineShellTexture) return machineShellTexture;
+  machineShellTexture = toyAssetLoader.load(
+    MACHINE_SHELL_PATH,
+    loaded => {
+      loaded.colorSpace = THREE.SRGBColorSpace;
+      loaded.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+      loaded.needsUpdate = true;
+    },
+    undefined,
+    () => console.warn('Machine shell asset failed to load')
+  );
+  machineShellTexture.colorSpace = THREE.SRGBColorSpace;
+  machineShellTexture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  return machineShellTexture;
+}
+
 function getToyAssetTexture(type){
   const key = `asset:${type}`;
   if (toyTextureCache.has(key)) return toyTextureCache.get(key);
@@ -96,13 +115,13 @@ let hintTimer = 0;
 pairTotalEl.textContent = String(totalPairs);
 
 const slotPositions = [
-  new THREE.Vector3(-3.10, -4.42, 6.65),
-  new THREE.Vector3(-1.68, -4.08, 6.65),
-  new THREE.Vector3(-0.26, -3.74, 6.65),
-  new THREE.Vector3( 1.16, -3.40, 6.65)
+  new THREE.Vector3(-3.34, -3.98, 6.68),
+  new THREE.Vector3(-1.83, -3.82, 6.68),
+  new THREE.Vector3(-0.27, -3.63, 6.68),
+  new THREE.Vector3( 1.35, -3.46, 6.68)
 ];
-const chuteEntry = new THREE.Vector3(3.98, -2.56, 6.55);
-const exitPoint = new THREE.Vector3(4.03, -1.83, 6.45);
+const chuteEntry = new THREE.Vector3(3.53, -2.71, 6.45);
+const exitPoint = new THREE.Vector3(3.72, -1.62, 5.38);
 
 function lerp(a,b,t){ return a+(b-a)*t; }
 function roundedRectPath(ctx,x,y,w,h,r){
@@ -262,35 +281,56 @@ function box(w,h,d,color,z=0,roughness=.32,metalness=.08){const m=new THREE.Mesh
 function sphere(r,color){return new THREE.Mesh(new THREE.SphereGeometry(r,28,18),new THREE.MeshStandardMaterial({color,roughness:.25,metalness:.08}));}
 
 function buildMachine(){
-  const back=plane(8.35,7.55,new THREE.MeshBasicMaterial({map:createBackdropTexture(),toneMapped:false}),-.7);back.position.y=2.47;machineBack.add(back);
-  const floor=plane(8.35,1.05,basicMaterial(0xf3b7c9),-.62);floor.position.y=-1.24;machineBack.add(floor);
+  // Interior stays live/interactive; the polished effect-image shell sits in front
+  // with a transparent glass opening and an integrated right-to-left queue track.
+  const back=plane(
+    8.46,
+    8.15,
+    new THREE.MeshBasicMaterial({map:createBackdropTexture(),toneMapped:false}),
+    -.72
+  );
+  back.position.y=2.23;
+  machineBack.add(back);
 
-  const frame=plane(9.82,14.72,new THREE.MeshBasicMaterial({map:createFrameTexture(),transparent:true,depthWrite:false,toneMapped:false}),5.35);frame.position.y=-.18;machineFront.add(frame);
+  const floor=plane(8.48,1.10,basicMaterial(0xf2bfd0),-.64);
+  floor.position.y=-1.43;
+  machineBack.add(floor);
 
-  // integrated queue track: one continuous rounded plastic tray, right-high -> left-low.
-  const track=box(8.55,1.02,.22,0xf7a6be,5.82,.18,.02);track.position.set(0,-3.92,0);track.rotation.z=.238;machineFront.add(track);
-  const trackGlow=box(8.18,.10,.04,0xffeef4,6.01,.10,0);trackGlow.position.set(0,-3.73,0);trackGlow.rotation.z=.238;machineFront.add(trackGlow);
-  const trackLip=box(8.38,.11,.06,0xc94f78,6.03,.20,.05);trackLip.position.set(0,-4.23,0);trackLip.rotation.z=.238;machineFront.add(trackLip);
+  const shellTexture=getMachineShellTexture();
+  const shell=plane(
+    10.35,
+    14.10,
+    new THREE.MeshBasicMaterial({
+      map:shellTexture,
+      transparent:true,
+      alphaTest:.025,
+      depthWrite:false,
+      toneMapped:false,
+      side:THREE.DoubleSide
+    }),
+    5.55
+  );
+  shell.position.y=-.25;
+  shell.renderOrder=8;
+  machineFront.add(shell);
 
-  // right exit integrated with tray
-  const exitBack=plane(1.25,1.55,basicMaterial(0x643548,.98),5.84);exitBack.position.set(3.96,-1.83,0);machineFront.add(exitBack);
-  const exitTop=box(1.55,.28,.28,0xe36d95,6.04);exitTop.position.set(3.96,-1.01,0);
-  const exitRight=box(.28,1.80,.28,0xe36d95,6.04);exitRight.position.set(4.58,-1.80,0);
-  const exitLeft=box(.20,1.25,.22,0xf5abc0,6.00);exitLeft.position.set(3.32,-1.73,0);
-  machineFront.add(exitTop,exitRight,exitLeft);
+  // The shell already contains the finished chute, four glowing wait markers,
+  // machine base, screws, highlights, and TOY FRIENDS panel.
+  // Only a very light live glass sheen remains procedural.
+  const glass=plane(8.45,8.00,basicMaterial(0xecfaff,.045),6.02);
+  glass.position.y=2.20;
+  glass.renderOrder=9;
+  machineFront.add(glass);
 
-  // soft waiting markers, no partitions.
-  for(const p of slotPositions){
-    const glow=plane(.92,.52,new THREE.MeshBasicMaterial({map:shadowTexture,transparent:true,opacity:.28,depthWrite:false,toneMapped:false}),6.12);
-    glow.position.set(p.x,p.y-.22,0);machineFront.add(glow);
-    const ring=new THREE.Mesh(new THREE.RingGeometry(.36,.41,48),new THREE.MeshBasicMaterial({color:0xfff8fa,transparent:true,opacity:.72,depthWrite:false,toneMapped:false,side:THREE.DoubleSide}));
-    ring.position.set(p.x,p.y-.18,6.15);machineFront.add(ring);
-  }
-
-  // glass sheen
-  const glass=plane(8.38,7.55,basicMaterial(0xecfaff,.055),6.06);glass.position.y=2.47;machineFront.add(glass);
-  for(const [x,y,w,h,r,a] of [[-2.85,2.8,.22,6.4,-.12,.12],[3.0,3.25,.12,3.5,-.12,.09],[-1.95,5.47,2.0,.09,0,.23],[2.00,5.47,2.0,.09,0,.23]]){
-    const hi=plane(w,h,basicMaterial(0xffffff,a),6.12);hi.position.set(x,y,0);hi.rotation.z=r;machineFront.add(hi);
+  for(const [x,y,w,h,r,a] of [
+    [-3.00,2.65,.19,6.10,-.11,.10],
+    [ 3.08,3.05,.11,3.50,-.11,.07]
+  ]){
+    const hi=plane(w,h,basicMaterial(0xffffff,a),6.08);
+    hi.position.set(x,y,0);
+    hi.rotation.z=r;
+    hi.renderOrder=10;
+    machineFront.add(hi);
   }
 }
 
